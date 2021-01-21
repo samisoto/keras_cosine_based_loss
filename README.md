@@ -1,6 +1,6 @@
 # Keras Custom Layers of AdaCos and ArcFace
 
-Keras implementation of Adacos, ArcFace and l2-softmax and experiments in caltech_birds2011.
+Keras Custom Layers of AdaCos and ArcFace, and experiments in caltech birds 2011(CUB-200-2011).
 
 ## Original Paper
 
@@ -14,6 +14,9 @@ Keras implementation of Adacos, ArcFace and l2-softmax and experiments in caltec
 ## Building Model sample by the Functional API
 
 ```python
+num_classes = 200 # CUB-200-2011
+img_size = 224    # EfficientNetB0
+
 from CustomLayer import AdaCos
 feature_extractor_layer = hub.KerasLayer("https://tfhub.dev/tensorflow/efficientnet/b0/feature-vector/1", name='efficientnetB0')
 input_image = tf.keras.Input(shape=(img_size, img_size, 3), dtype=tf.float32, name='input_image')
@@ -29,20 +32,36 @@ model = tf.keras.models.Model(inputs=(input_image, y_true), outputs=tf.keras.lay
 
 <img src="docs/img/model.png">
 
-## Input tf.data shape
-
-```python
-train_batches.element_spec
-```
-
-```shell-session
-((TensorSpec(shape=(None, None, None, 3), dtype=tf.float32, name=None), TensorSpec(shape=(None, 1), dtype=tf.int64, name=None)), TensorSpec(shape=(None,), dtype=tf.int64, name=None))
-```
-
 ## Requirements
 
 * tensorflow > 2.2
+* tensorflow_probability
 
-## Experiments in caltech_birds2011
+## Experiments in caltech birds 2011(CUB-200-2011)
 
-experiment_caltech_birds.py
+* Using data
+
+    caltech_birds tfds ([https://www.tensorflow.org/datasets/catalog/caltech_birds2011](https://www.tensorflow.org/datasets/catalog/caltech_birds2011)).
+
+* Preprocess
+
+    crop to bounding box, general augmentation(flip, brightness, rotate, etc.), resize to [224,224,3] (EfficientnetB0) and return ((image, label), label) for using label to train
+
+    ```shell-session
+    >>>train_batches
+    <MapDataset shapes: (((None, None, None, 3), (None, 1)), (None,)), types: ((tf.float32, tf.int64), tf.int64)>
+    ```
+
+* Model
+
+    [EfficientNetB0](https://tfhub.dev/tensorflow/efficientnet/b0/feature-vector/1) with AdaCos, fixedAdaCos, ArcFace, l2-softmax and softmax
+
+* Result
+
+  * Accuracy of test data is almost same(0.82) except for softmax(0.8).
+
+  * AdaCos value of s gradually decreases as with the paper.
+
+  * Average *cos&theta;* of correct label increases to near 1(*&theta;* = 0) in AdaCos and fixedAdaCos.
+
+  <img src="docs/img/result.png">
